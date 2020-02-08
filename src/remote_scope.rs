@@ -5,6 +5,10 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0. */
 
+//! Low-level structured concurrency.
+//!
+//! This module gives you everything you need to spawn a task but does not do the actual spawning.
+
 pub mod signals;
 
 use self::signals::*;
@@ -34,11 +38,16 @@ const EXPECT_SPAWNER_NO_CONTENTION: &str =
      global variable. This check does not cover all possible errors, and \
      is only performed if debug assertions are enabled.";
 
-#[derive(Default)]
+/// A scope for a child task.
 pub struct RemoteScope {
     spawner: Option<RemoteSpawner>,
 }
 
+/// A spawner.
+///
+/// This type is returned by `RemoteScope::spawner`.
+///
+/// This type implements `RawScopedSpawn`.
 #[derive(Clone)]
 pub struct RemoteSpawner {
     child_cancel_senders: Arc<Mutex<HashMap<usize, oneshot::Sender<()>>>>,
@@ -48,10 +57,29 @@ pub struct RemoteSpawner {
 }
 
 impl RemoteScope {
+    /// Constructs a new `RemoteScope`.
     pub fn new() -> Self {
         Self { spawner: None }
     }
 
+    /// Returns a spawner for the scoped child task.
+    ///
+    /// It may be cheaper if this method is not called.
+    pub fn spawner(&mut self) -> RemoteSpawner {
+        match &self.spawner {
+            Some(spawner) => spawner.clone(),
+            None => {
+                let spawner = RemoteSpawner::new();
+                self.spawner = Some(spawner.clone());
+                spawner
+            }
+        }
+    }
+
+    /// Wraps `signal`, `fut`, and `done` into a future suitable to be run in a new task.
+    ///
+    /// The returned future will handle all signals for structured concurrency. It will also handle
+    /// termination as described in the library overview.
     pub fn wrap<ParentCancelReceiver, ParentDoneSender, Fut, Done>(
         self,
         signal: ChildSignals<ParentCancelReceiver, ParentDoneSender>,
@@ -120,16 +148,11 @@ impl RemoteScope {
             drop(data.parent_done_sender);
         }
     }
+}
 
-    pub fn spawner(&mut self) -> RemoteSpawner {
-        match &self.spawner {
-            Some(spawner) => spawner.clone(),
-            None => {
-                let spawner = RemoteSpawner::new();
-                self.spawner = Some(spawner.clone());
-                spawner
-            }
-        }
+impl Default for RemoteScope {
+    fn default() -> RemoteScope {
+        Self::new()
     }
 }
 

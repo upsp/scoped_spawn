@@ -5,6 +5,10 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0. */
 
+//! Signals used by this library.
+//!
+//! See the documentation for `SignalSender` and `SignalReceiver`.
+
 use crate::{SignalReceiver, SignalSender};
 use futures::channel::oneshot;
 use std::collections::HashMap;
@@ -13,6 +17,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 
+/// Remote cancel receiver.
 pub struct RemoteCancelReceiver {
     pub(crate) receiver: oneshot::Receiver<()>,
     pub(crate) sender_id: Pin<Box<u8>>,
@@ -37,6 +42,7 @@ impl Drop for RemoteCancelReceiver {
 
 impl SignalReceiver for RemoteCancelReceiver {}
 
+/// Remote done sender.
 pub struct RemoteDoneSender {
     pub(crate) _sender: oneshot::Sender<()>,
     pub(crate) receiver_id: Pin<Box<u8>>,
@@ -53,12 +59,14 @@ impl Drop for RemoteDoneSender {
 
 impl SignalSender for RemoteDoneSender {}
 
+/// Remote cancel sender for parent to send cancel signal.
 pub struct RemoteCancelSenderWithSignal {
     pub(crate) _sender: oneshot::Sender<()>,
 }
 
 impl SignalSender for RemoteCancelSenderWithSignal {}
 
+/// Remote cancel receiver, which also receives cancel signal from parent.
 pub struct RemoteCancelReceiverWithSignal {
     pub(crate) receiver_root: oneshot::Receiver<()>,
     pub(crate) receiver_leaf: oneshot::Receiver<()>,
@@ -87,6 +95,7 @@ impl Drop for RemoteCancelReceiverWithSignal {
 
 impl SignalReceiver for RemoteCancelReceiverWithSignal {}
 
+/// Remote done sender, which also sends done signal to parent.
 pub struct RemoteDoneSenderWithSignal {
     pub(crate) _sender_root: oneshot::Sender<()>,
     pub(crate) _sender_leaf: oneshot::Sender<()>,
@@ -104,6 +113,7 @@ impl Drop for RemoteDoneSenderWithSignal {
 
 impl SignalSender for RemoteDoneSenderWithSignal {}
 
+/// Remote done receiver for parent to receive done signal.
 pub struct RemoteDoneReceiverWithSignal {
     pub(crate) receiver: oneshot::Receiver<()>,
 }

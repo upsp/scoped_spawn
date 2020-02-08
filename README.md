@@ -27,6 +27,9 @@ tasks. The spawned tasks become children of the current task and will be
 terminated when the current task begins to terminate. The API also provides
 methods with which you could terminate a child task earlier.
 
+Termination initiated outside the task to be terminated is also called
+cancellation.
+
 The `ScopedSpawn` trait is implemented by `ScopedSpawner`. To create a
 `ScopedSpawner`, pass it an object that implements `Spawn`, which you can
 trivially implement for all known executors.
@@ -45,7 +48,9 @@ The termination process has several phases.
 4. The task asynchronously waits for its children to terminate.
 5. The `done` function is called in the task. For details see the documentation
    for `ScopedSpawn`.
-6. Finally, the task signals its termination to its parent.
+6. Finally, the task signals its termination to its parent through the "done"
+   signal. For details see the documentation for `ParentSignals` and
+   `ChildSignals`.
 
 ## Low-level API
 
