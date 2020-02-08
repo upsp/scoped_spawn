@@ -2,11 +2,20 @@ name: Workflow
 
 on: [push, pull_request]
 
+env:
+  CI_SCRIPT_PREPARE: >
+    sudo apt-get update -y -qq &&
+    rustup default stable &&
+    rustup update &&
+    rustc --version
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Prepare
+      run: eval $CI_SCRIPT_PREPARE
     - name: Build
       run: RUSTFLAGS='-D warnings -D rust-2018-idioms' cargo build
 
@@ -14,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Prepare
+      run: eval $CI_SCRIPT_PREPARE
     - name: Check
       run: cargo clippy --all -- -D clippy::all -D warnings
 
@@ -21,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Prepare
+      run: eval $CI_SCRIPT_PREPARE
     - name: Format
       run: cargo fmt -- --check
 
@@ -28,5 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Prepare
+      run: eval $CI_SCRIPT_PREPARE
     - name: Test
       run: cargo test
