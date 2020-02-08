@@ -1,0 +1,34 @@
+image: rust:latest
+
+variables:
+  PREPARE: >
+    apt-get update -y -qq &&
+    rustup default stable &&
+    rustup update &&
+    rustc --version
+
+build:
+  before_script:
+  - eval $PREPARE
+  script:
+  - RUSTFLAGS='-D warnings -D rust-2018-idioms' cargo build
+
+check:
+  before_script:
+  - eval $PREPARE
+  - rustup component add clippy
+  script:
+  - cargo clippy --all -- -D clippy::all -D warnings
+
+format:
+  before_script:
+  - eval $PREPARE
+  - rustup component add rustfmt
+  script:
+  - cargo fmt -- --check
+
+test:
+  before_script:
+  - eval $PREPARE
+  script:
+  - cargo test

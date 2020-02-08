@@ -1,0 +1,14 @@
+[package]
+name = "scoped_spawn"
+description = "Full structured concurrency for asynchronous programming."
+version = "0.1.0"
+authors = ["Scoped Spawn Authors"]
+edition = "2018"
+license = "MPL-2.0-no-copyleft-exception"
+keywords = ["structured", "concurrency", "async", "task"]
+categories = ["asynchronous", "concurrency"]
+readme = "README.md"
+repository = "https://github.com/upsp/scoped_spawn"
+
+[dependencies]
+futures = "0.3.3"
