@@ -14,7 +14,7 @@ repository = "https://github.com/upsp/scoped_spawn"
 gitlab = { repository = "upsp/scoped_spawn" }
 
 [dependencies]
-futures = "0.3.3"
+futures = { version = "0.3.3", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 tokio = { version = "0.2.2", features = ["macros", "rt-core", "time"] }
