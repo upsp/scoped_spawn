@@ -125,8 +125,8 @@
 pub mod remote_scope;
 
 use self::remote_scope::{RemoteScope, RemoteSpawner};
+use core::future::Future;
 use futures::task::{self, SpawnError, SpawnExt};
-use std::future::Future;
 
 /// An object that sends a signal when dropped.
 pub trait SignalSender {} // TODO: Allow "forgetting" the sender.

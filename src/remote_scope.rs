@@ -13,11 +13,11 @@ pub mod signals;
 
 use self::signals::*;
 use crate::{ChildSignals, ParentSignals, RawScopedSpawn, SignalReceiver, SignalSender};
+use core::future::Future;
 use futures::channel::oneshot;
 use futures::future;
 use futures::pin_mut;
 use std::collections::HashMap;
-use std::future::Future;
 use std::sync::{Arc, Mutex};
 
 #[cfg(debug_assertions)]
@@ -130,7 +130,7 @@ impl RemoteScope {
                         *spawner.child_cancel_senders.lock().unwrap() = HashMap::new();
                     }
                     let receivers = {
-                        std::mem::replace(
+                        core::mem::replace(
                             &mut *spawner.child_done_receivers.lock().unwrap(),
                             HashMap::new(),
                         )

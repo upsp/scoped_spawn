@@ -10,12 +10,12 @@
 //! See the documentation for `SignalSender` and `SignalReceiver`.
 
 use crate::{SignalReceiver, SignalSender};
+use core::future::Future;
+use core::pin::Pin;
+use core::task::{Context, Poll};
 use futures::channel::oneshot;
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll};
 
 /// Remote cancel receiver.
 pub struct RemoteCancelReceiver {
