@@ -10,5 +10,8 @@ categories = ["asynchronous", "concurrency"]
 readme = "README.md"
 repository = "https://github.com/upsp/scoped_spawn"
 
+[badges]
+gitlab = { repository = "upsp/scoped_spawn" }
+
 [dependencies]
 futures = "0.3.3"
