@@ -9,7 +9,7 @@
 //!
 //! See the documentation for `SignalSender` and `SignalReceiver`.
 
-use crate::{SignalReceiver, SignalSender};
+use crate::{ForgettableSignalSender, SignalReceiver, SignalSender};
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll};
@@ -61,15 +61,21 @@ impl SignalSender for RemoteDoneSender {}
 
 /// Remote cancel sender for parent to send cancel signal.
 pub struct RemoteCancelSenderWithSignal {
-    pub(crate) _sender: oneshot::Sender<()>,
+    pub(crate) sender: oneshot::Sender<ForgetMessage>,
 }
 
 impl SignalSender for RemoteCancelSenderWithSignal {}
 
+impl ForgettableSignalSender for RemoteCancelSenderWithSignal {
+    fn forget(self) {
+        let _ = self.sender.send(ForgetMessage::new());
+    }
+}
+
 /// Remote cancel receiver, which also receives cancel signal from parent.
 pub struct RemoteCancelReceiverWithSignal {
     pub(crate) receiver_root: oneshot::Receiver<()>,
-    pub(crate) receiver_leaf: oneshot::Receiver<()>,
+    pub(crate) receiver_leaf: Option<oneshot::Receiver<ForgetMessage>>,
     pub(crate) sender_id: Pin<Box<u8>>,
     pub(crate) senders: Arc<Mutex<HashMap<usize, oneshot::Sender<()>>>>,
 }
@@ -79,7 +85,26 @@ impl Future for RemoteCancelReceiverWithSignal {
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match Pin::new(&mut self.receiver_root).poll(cx) {
-            Poll::Pending => Pin::new(&mut self.receiver_leaf).poll(cx).map(|_| ()),
+            Poll::Pending => {
+                match &mut self.receiver_leaf {
+                    Some(receiver_leaf) => {
+                        // Not forgotten
+                        match Pin::new(receiver_leaf).poll(cx) {
+                            Poll::Pending => Poll::Pending,
+                            Poll::Ready(Err(_)) => Poll::Ready(()),
+                            Poll::Ready(Ok(ForgetMessage {})) => {
+                                // Forget the receiver
+                                self.receiver_leaf = None;
+                                Poll::Pending
+                            }
+                        }
+                    }
+                    None => {
+                        // Already forgotten
+                        Poll::Pending
+                    }
+                }
+            }
             Poll::Ready(_) => Poll::Ready(()),
         }
     }
@@ -127,3 +152,13 @@ impl Future for RemoteDoneReceiverWithSignal {
 }
 
 impl SignalReceiver for RemoteDoneReceiverWithSignal {}
+
+/// Message to indicate that the receiver should forget the channel from which the message is
+/// received.
+pub(crate) struct ForgetMessage {}
+
+impl ForgetMessage {
+    pub fn new() -> Self {
+        Self {}
+    }
+}

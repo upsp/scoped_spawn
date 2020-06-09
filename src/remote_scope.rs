@@ -244,7 +244,7 @@ impl RawScopedSpawn for RemoteSpawner {
         (
             ParentSignals {
                 cancel_sender: RemoteCancelSenderWithSignal {
-                    _sender: cancel_sender_leaf,
+                    sender: cancel_sender_leaf,
                 },
                 done_receiver: RemoteDoneReceiverWithSignal {
                     receiver: done_receiver_leaf,
@@ -253,7 +253,7 @@ impl RawScopedSpawn for RemoteSpawner {
             ChildSignals {
                 cancel_receiver: RemoteCancelReceiverWithSignal {
                     receiver_root: cancel_receiver_root,
-                    receiver_leaf: cancel_receiver_leaf,
+                    receiver_leaf: Some(cancel_receiver_leaf),
                     sender_id: cancel_sender_root_id,
                     senders: self.child_cancel_senders.clone(),
                 },

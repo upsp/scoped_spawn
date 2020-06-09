@@ -129,13 +129,19 @@ use core::future::Future;
 use futures::task::{self, SpawnError, SpawnExt};
 
 /// An object that sends a signal when dropped.
-pub trait SignalSender {} // TODO: Allow "forgetting" the sender.
+pub trait SignalSender {}
+
+/// A signal sender that may be forgotten.
+pub trait ForgettableSignalSender: SignalSender {
+    /// Forgets this sender. The signal will not be sent.
+    fn forget(self);
+}
 
 /// A future that resolves when receiving a signal.
 pub trait SignalReceiver: Future<Output = ()> {}
 
 /// Signal sender and receiver for parent tasks.
-pub struct ParentSignals<CancelSender: SignalSender, DoneReceiver: SignalReceiver> {
+pub struct ParentSignals<CancelSender: ForgettableSignalSender, DoneReceiver: SignalReceiver> {
     /// Signal sender to send cancel signal to child task.
     pub cancel_sender: CancelSender,
     /// Signal receiver to receive done signal from child task.
@@ -166,13 +172,13 @@ type ParentChildSignals<CancelSender, DoneReceiver, CancelReceiver, DoneSender> 
 /// only a future.
 pub trait ScopedSpawn: Clone + Send + Sync {
     /// The type of the signal sender for parents to initiate task termination.
-    type CancelSender: SignalSender + Send;
+    type CancelSender: ForgettableSignalSender + Send;
     /// The type of the signal receiver for parents to wait for task termination.
     type DoneReceiver: SignalReceiver + Send;
 
     /// The type of the signal sender for parents to initiate task termination, when the spawned
     /// object is only a future.
-    type FutureCancelSender: SignalSender + Send;
+    type FutureCancelSender: ForgettableSignalSender + Send;
     /// The type of the signal receiver for parents to wait for task termination, when the spawned
     /// object is only a future.
     type FutureDoneReceiver: SignalReceiver + Send;
@@ -240,7 +246,7 @@ pub trait RawScopedSpawn {
 
     /// The type of the signal sender for parents to initiate task termination, when using
     /// `spawn_raw_with_signal`.
-    type CancelSenderWithSignal: SignalSender + Send;
+    type CancelSenderWithSignal: ForgettableSignalSender + Send;
     /// The type of the signal receiver for parents to wait for task termination, when using
     /// `spawn_raw_with_signal`.
     type DoneReceiverWithSignal: SignalReceiver + Send;
